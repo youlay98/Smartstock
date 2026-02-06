@@ -16,8 +16,20 @@ services:
     networks:
       - smartstock-network
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - smartstock-network
+
   eureka-server:
-    build: 
+    build:
       context: ./eureka-server
       dockerfile: Dockerfile
     image: smartstock/eureka-server
@@ -28,13 +40,13 @@ services:
     networks:
       - smartstock-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
       interval: 30s
       timeout: 10s
       retries: 5
 
   gateway-service:
-    build: 
+    build:
       context: ./GatewayService
       dockerfile: Dockerfile
     image: smartstock/gateway-service
@@ -45,7 +57,7 @@ services:
       eureka-server:
         condition: service_healthy
     environment:
-       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     restart: unless-stopped
     networks:
       - smartstock-network
@@ -106,7 +118,7 @@ services:
       - customer-db-data:/var/lib/postgresql/data
     networks:
       - smartstock-network
-      
+
   cart-db:
     image: postgres:15-alpine
     container_name: cart-db
@@ -120,10 +132,9 @@ services:
       - cart-db-data:/var/lib/postgresql/data
     networks:
       - smartstock-network
-
   # Uncomment these if you want to run the apps in Docker as well
   # Ensure you run 'mvn clean package -DskipTests' first to generate JARs if using simple Dockerfiles
-  
+
   # auth-service:
   #   build: ./AuthService
   #   depends_on:

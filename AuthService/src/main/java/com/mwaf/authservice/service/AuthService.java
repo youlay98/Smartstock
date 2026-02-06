@@ -9,6 +9,9 @@ import com.mwaf.authservice.model.User;
 import com.mwaf.authservice.repository.RoleRepository;
 import com.mwaf.authservice.repository.UserRepository;
 import com.mwaf.authservice.utility.JwtUtil;
+import com.mwaf.authservice.config.RabbitMQConfig;
+import com.mwaf.authservice.event.UserRegisteredEvent;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,9 +45,11 @@ public class AuthService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate; // Inject RabbitTemplate
+
     @Value("${customer.service.url}")
     private String customerServiceUrl;
-
 
     public CreateCustomerRequest registerUserAndCreatingCostumer(RegisterRequest registerRequest) {
         if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
@@ -66,7 +71,27 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Prepare the DTO to be sent to the CustomerService.
+        // --- RabbitMQ: Publish UserRegisteredEvent ---
+        try {
+            UserRegisteredEvent event = new UserRegisteredEvent(
+                    user.getId(),
+                    user.getUsername(),
+                    registerRequest.getEmail(),
+                    registerRequest.getName(),
+                    registerRequest.getPhone(),
+                    registerRequest.getAddress());
+
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.AUTH_EXCHANGE,
+                    RabbitMQConfig.ROUTING_KEY,
+                    event);
+            // System.out.println("Published UserRegisteredEvent for user: " +
+            // user.getUsername());
+        } catch (Exception e) {
+            e.printStackTrace(); // Log error but don't fail registration
+        }
+
+        // Prepare the DTO to be sent to the CustomerService (Legacy/Return consistency)
         CreateCustomerRequest createCustomerRequest = new CreateCustomerRequest();
         createCustomerRequest.setUserId(user.getId());
         createCustomerRequest.setName(registerRequest.getName());
@@ -79,11 +104,11 @@ public class AuthService {
 
     /**
      * Registers a new admin account.
-     * This endpoint requires the client to send a valid admin token in the RegisterRequest.
+     * This endpoint requires the client to send a valid admin token in the
+     * RegisterRequest.
      */
     public String registerAdmin(RegisterRequest registerRequest) {
 
-         
         if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
             throw new RuntimeException("Username already exists");
         }
@@ -111,7 +136,6 @@ public class AuthService {
 
         return "Admin registered successfully";
     }
-
 
     public String loginUser(LoginRequest loginRequest) {
         User user = userRepository.findByUsername(loginRequest.getUsername())

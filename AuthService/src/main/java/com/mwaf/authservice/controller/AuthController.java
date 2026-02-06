@@ -26,22 +26,13 @@ public class AuthController {
     @Value("${customer.service.url}")
     private String customerServiceUrl;
 
-
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
-        CreateCustomerRequest registeredUser = authService.registerUserAndCreatingCostumer(registerRequest);
-
-        try {
-            String customerEndpoint = customerServiceUrl + "/api/customers";
-            restTemplate.postForEntity(customerEndpoint, registeredUser, Void.class);
-        } catch (Exception ex) {
-            log.error("Could not create customer record", ex);
-            // if you want to fail hard:
-            throw new IllegalStateException("Customer creation failed", ex);
-        }
+        // AuthService now publishes the event internally.
+        // We don't need to call CustomerService explicitly here anymore.
+        authService.registerUserAndCreatingCostumer(registerRequest);
         return ResponseEntity.ok("User registered successfully");
     }
-
 
     @PostMapping("/admin/register")
     public ResponseEntity<?> registerAdmin(@RequestBody RegisterRequest registerRequest) {

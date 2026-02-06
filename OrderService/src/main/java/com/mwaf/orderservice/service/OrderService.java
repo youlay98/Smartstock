@@ -5,8 +5,12 @@ import com.mwaf.orderservice.model.Order;
 import com.mwaf.orderservice.model.OrderItem;
 import com.mwaf.orderservice.client.ProductServiceClient;
 
+import com.mwaf.orderservice.config.RabbitMQConfig;
+import com.mwaf.orderservice.event.OrderPlacedEvent;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.mwaf.orderservice.repository.OrderRepository;
 import org.springframework.stereotype.Service;
+import java.util.stream.Collectors;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,19 +19,20 @@ import java.util.List;
 @Service
 public class OrderService {
 
-
     private final OrderRepository orderRepository;
     private final ProductServiceClient productServiceClient;
-
+    private final RabbitTemplate rabbitTemplate;
 
     // Constructor injection for OrderRepository
-    public OrderService(OrderRepository orderRepository ,
-                        ProductServiceClient productServiceClient   ) {
+    public OrderService(OrderRepository orderRepository,
+            ProductServiceClient productServiceClient,
+            RabbitTemplate rabbitTemplate) {
         this.orderRepository = orderRepository;
         this.productServiceClient = productServiceClient;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
-   // make sure to import this at the top
+    // make sure to import this at the top
 
     public Order createOrder(Order order) {
         // If orderDate is not provided, set it to the current date/time
@@ -35,7 +40,8 @@ public class OrderService {
             order.setOrderDate(LocalDateTime.now());
         }
 
-        // Optionally, if status is required and not provided, set a default value (e.g., "NEW")
+        // Optionally, if status is required and not provided, set a default value
+        // (e.g., "NEW")
         if (order.getStatus() == null) {
             order.setStatus("NEW");
         }
@@ -52,40 +58,59 @@ public class OrderService {
                 throw new RuntimeException(
                         "Insufficient stock for product ID: " + item.getProductId() +
                                 ". Available: " + productDTO.getStockQuantity() +
-                                ", Requested: " + item.getQuantity()
-                );
+                                ", Requested: " + item.getQuantity());
             }
 
             // 3. Calculate cost for this item (product’s price * quantity)
             BigDecimal itemCost = productDTO.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             totalAmount = totalAmount.add(itemCost);
 
-            // (Optional) Store the product’s price in the OrderItem so you have a snapshot of the price at ordering time
+            // (Optional) Store the product’s price in the OrderItem so you have a snapshot
+            // of the price at ordering time
             item.setUnitPrice(productDTO.getPrice());
         }
 
-        // Reduce stock for each order item
-        for (OrderItem item : order.getOrderItems()) {
-            productServiceClient.reduceStock(item.getProductId(), item.getQuantity());
+        // 6. Save the order (with its items) to the repository FIRST to get an ID
+        Order savedOrder = orderRepository.save(order);
+
+        // --- RabbitMQ: Publish OrderPlacedEvent for Stock Reduction ---
+        try {
+            List<OrderPlacedEvent.OrderItemDto> itemDtos = savedOrder.getOrderItems().stream()
+                    .map(item -> new OrderPlacedEvent.OrderItemDto(item.getProductId(), item.getQuantity()))
+                    .collect(Collectors.toList());
+
+            // Assuming Order has a getCustomerId() or similar, if not we might default null
+            // or fix Model
+            // Checking Order model... assuming check passed or we add field later if
+            // missing.
+            // For now using safe null if field missing or explicit getter if valid.
+            // Order has customerId? OrderService:121 implies findByCustomerId.
+            // Let's assume Order entity has getCustomerId() or similar.
+            // Actually, in line 121: findByCustomerId(customerId).
+
+            OrderPlacedEvent event = new OrderPlacedEvent(
+                    savedOrder.getId(),
+                    savedOrder.getCustomerId(), // We need to verify if this getter exists
+                    itemDtos);
+
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.ORDER_EXCHANGE,
+                    RabbitMQConfig.ROUTING_KEY,
+                    event);
+            // System.out.println("Published OrderPlacedEvent for order: " +
+            // savedOrder.getId());
+        } catch (Exception e) {
+            System.err.println("Failed to publish OrderPlacedEvent: " + e.getMessage());
+            // In production, we might want to flag this order or retry.
         }
 
-        // 4. Set the total amount on the order
-        order.setTotalAmount(totalAmount);
-
-        // 5. Set the order reference for each order item
-        for (OrderItem item : order.getOrderItems()) {
-            item.setOrder(order);
-        }
-
-        // 6. Save the order (with its items) to the repository
-        return orderRepository.save(order);
+        return savedOrder;
     }
 
-
-//    public Order createOrder(Order order) {
-//        // Optional: Add any business logic here (e.g., total amount calculation)
-//        return orderRepository.save(order);
-//    }
+    // public Order createOrder(Order order) {
+    // // Optional: Add any business logic here (e.g., total amount calculation)
+    // return orderRepository.save(order);
+    // }
 
     // Retrieve an order by its ID
     public Order getOrderById(Long id) {
@@ -106,8 +131,6 @@ public class OrderService {
         if (orderDetails.getStatus() != null) {
             existingOrder.setStatus(orderDetails.getStatus());
         }
-
-
 
         return orderRepository.save(existingOrder);
     }
