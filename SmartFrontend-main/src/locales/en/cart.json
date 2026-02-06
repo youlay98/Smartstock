@@ -1,0 +1,43 @@
+{
+  "cart": {
+    "title": "Shopping Cart",
+    "emptyCart": "Your cart is empty",
+    "cartItems": "Cart Items",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Total",
+    "checkout": "Checkout",
+    "continueShopping": "Continue Shopping",
+    "updateQuantity": "Update Quantity",
+    "removeItem": "Remove Item",
+    "quantity": "Quantity",
+    "price": "Price",
+    "itemTotal": "Item Total",
+    "items": "no items | one item | {count} items",
+    "item": "item",
+    "loading": "Loading cart...",
+    "addProducts": "Add some products to get started!",
+    "products": "Products",
+    "totalItems": "Total Items",
+    "clearCart": "Clear Cart",
+    "proceedToCheckout": "Proceed to Checkout",
+    "productNameNotAvailable": "Product Name Not Available",
+    "maximumQuantity": "Maximum available quantity",
+    "closeCart": "Close cart",
+    "noPermissionUpdate": "You do not have permission to update your cart.",
+    "noPermissionRemove": "You do not have permission to remove items from your cart.",
+    "itemRemoved": "Item removed from cart"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "orderSummary": "Order Summary",
+    "shippingInfo": "Shipping Information",
+    "paymentInfo": "Payment Information",
+    "placeOrder": "Place Order",
+    "orderConfirmation": "Order Confirmation",
+    "orderNumber": "Order Number",
+    "orderDate": "Order Date",
+    "estimatedDelivery": "Estimated Delivery",
+    "thankYou": "Thank you for your order!"
+  }
+} 

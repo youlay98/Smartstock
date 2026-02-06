@@ -1,0 +1,69 @@
+{
+  "dashboard": {
+    "title": "Analytics Dashboard",
+    "overview": "Analytics Overview"
+  },
+  "timeRanges": {
+    "last7Days": "Last 7 Days",
+    "last30Days": "Last 30 Days",
+    "last90Days": "Last 90 Days",
+    "lastYear": "Last Year"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "export": "Export"
+  },
+  "loading": "Loading analytics data...",
+  "error": {
+    "title": "Error Loading Analytics"
+  },
+  "metrics": {
+    "totalOrders": "Total Orders",
+    "totalRevenue": "Total Revenue",
+    "newCustomers": "New Customers",
+    "lowStockItems": "Low Stock Items",
+    "averageOrderValue": "Average Order Value",
+    "conversionRate": "Conversion Rate"
+  },
+  "charts": {
+    "salesTrend": "Sales Trend",
+    "topProducts": "Top Products",
+    "customerDemographics": "Customer Demographics",
+    "stockLevels": "Stock Levels",
+    "orders": "Orders",
+    "revenue": "Revenue",
+    "sales": "Sales",
+    "customers": "Customers",
+    "newCustomers": "New Customers",
+    "returningCustomers": "Returning Customers",
+    "vipCustomers": "VIP Customers",
+    "inactiveCustomers": "Inactive Customers",
+    "stockStatus": "Stock Status",
+    "inStock": "In Stock",
+    "lowStock": "Low Stock",
+    "outOfStock": "Out of Stock",
+    "discontinued": "Discontinued",
+    "loading": "Loading chart..."
+  },
+  "recentActivity": {
+    "title": "Recent Activity",
+    "type": "Type",
+    "description": "Description",
+    "amount": "Amount",
+    "date": "Date",
+    "status": "Status",
+    "types": {
+      "order": "Order",
+      "product": "Product",
+      "customer": "Customer",
+      "stock": "Stock"
+    },
+    "statuses": {
+      "completed": "Completed",
+      "pending": "Pending",
+      "warning": "Warning",
+      "error": "Error"
+    }
+  }
+} 

@@ -1,0 +1,69 @@
+{
+  "dashboard": {
+    "title": "Analytics Dashboard",
+    "overview": "Analytics Übersicht"
+  },
+  "timeRanges": {
+    "last7Days": "Letzte 7 Tage",
+    "last30Days": "Letzte 30 Tage",
+    "last90Days": "Letzte 90 Tage",
+    "lastYear": "Letztes Jahr"
+  },
+  "actions": {
+    "refresh": "Aktualisieren",
+    "retry": "Wiederholen",
+    "export": "Exportieren"
+  },
+  "loading": "Analytics-Daten werden geladen...",
+  "error": {
+    "title": "Fehler beim Laden der Analytics"
+  },
+  "metrics": {
+    "totalOrders": "Gesamtbestellungen",
+    "totalRevenue": "Gesamtumsatz",
+    "newCustomers": "Neue Kunden",
+    "lowStockItems": "Artikel mit niedrigem Bestand",
+    "averageOrderValue": "Durchschnittlicher Bestellwert",
+    "conversionRate": "Konversionsrate"
+  },
+  "charts": {
+    "salesTrend": "Verkaufstrend",
+    "topProducts": "Top-Produkte",
+    "customerDemographics": "Kundendemografie",
+    "stockLevels": "Bestandsniveaus",
+    "orders": "Bestellungen",
+    "revenue": "Umsatz",
+    "sales": "Verkäufe",
+    "customers": "Kunden",
+    "newCustomers": "Neue Kunden",
+    "returningCustomers": "Wiederkehrende Kunden",
+    "vipCustomers": "VIP-Kunden",
+    "inactiveCustomers": "Inaktive Kunden",
+    "stockStatus": "Bestandsstatus",
+    "inStock": "Auf Lager",
+    "lowStock": "Niedriger Bestand",
+    "outOfStock": "Nicht auf Lager",
+    "discontinued": "Eingestellt",
+    "loading": "Diagramm wird geladen..."
+  },
+  "recentActivity": {
+    "title": "Letzte Aktivitäten",
+    "type": "Typ",
+    "description": "Beschreibung",
+    "amount": "Betrag",
+    "date": "Datum",
+    "status": "Status",
+    "types": {
+      "order": "Bestellung",
+      "product": "Produkt",
+      "customer": "Kunde",
+      "stock": "Bestand"
+    },
+    "statuses": {
+      "completed": "Abgeschlossen",
+      "pending": "Ausstehend",
+      "warning": "Warnung",
+      "error": "Fehler"
+    }
+  }
+} 

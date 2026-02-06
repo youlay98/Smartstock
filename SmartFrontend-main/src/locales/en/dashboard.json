@@ -1,0 +1,34 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "overview": "Overview",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions",
+    "statistics": "Statistics",
+    "charts": "Charts"
+  },
+  "stats": {
+    "totalSales": "Total Sales",
+    "totalOrders": "Total Orders",
+    "totalProducts": "Total Products",
+    "totalCustomers": "Total Customers",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "products": "Products",
+    "customers": "Customers",
+    "thisMonth": "This Month",
+    "thisWeek": "This Week",
+    "today": "Today"
+  },
+  "admin": {
+    "adminDashboard": "Admin Dashboard",
+    "systemOverview": "System Overview",
+    "manageProducts": "Manage Products",
+    "manageOrders": "Manage Orders",
+    "manageCustomers": "Manage Customers",
+    "systemSettings": "System Settings",
+    "reports": "Reports",
+    "analytics": "Analytics"
+  }
+} 

@@ -1,0 +1,29 @@
+{
+  "products": {
+    "searchPlaceholder": "Search products...",
+    "allProducts": "All Products",
+    "loading": "Loading products...",
+    "noProductsFound": "No products found. Try a different search or category.",
+    "outOfStock": "Out of Stock",
+    "noDescription": "No description available",
+    "addToCart": "Add to Cart",
+    "added": "Added",
+    "rateThisProduct": "Rate this Product",
+    "noRating": "No rating",
+    "reviews": "reviews",
+    "viewCart": "View Cart",
+    "category": "Category",
+    "rateThisProduct": "Rate this Product",
+    "yourRating": "Your Rating:",
+    "reviewOptional": "Review (optional):",
+    "reviewPlaceholder": "Share your experience with this product...",
+    "cancel": "Cancel",
+    "submitRating": "Submit Rating",
+    "noRating": "No rating",
+    "poor": "Poor",
+    "fair": "Fair",
+    "good": "Good",
+    "veryGood": "Very Good",
+    "excellent": "Excellent"
+  }
+} 

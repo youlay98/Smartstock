@@ -1,0 +1,43 @@
+{
+  "cart": {
+    "title": "Warenkorb",
+    "emptyCart": "Ihr Warenkorb ist leer",
+    "cartItems": "Warenkorb-Artikel",
+    "subtotal": "Zwischensumme",
+    "tax": "Steuern",
+    "total": "Gesamt",
+    "checkout": "Zur Kasse",
+    "continueShopping": "Weiter einkaufen",
+    "updateQuantity": "Menge aktualisieren",
+    "removeItem": "Artikel entfernen",
+    "quantity": "Menge",
+    "price": "Preis",
+    "itemTotal": "Artikel-Gesamt",
+    "items": "keine Artikel | ein Artikel | {count} Artikel",
+    "item": "Artikel",
+    "loading": "Warenkorb wird geladen...",
+    "addProducts": "Fügen Sie einige Produkte hinzu, um zu beginnen!",
+    "products": "Produkte",
+    "totalItems": "Gesamtartikel",
+    "clearCart": "Warenkorb leeren",
+    "proceedToCheckout": "Zur Kasse gehen",
+    "productNameNotAvailable": "Produktname nicht verfügbar",
+    "maximumQuantity": "Maximale verfügbare Menge",
+    "closeCart": "Warenkorb schließen",
+    "noPermissionUpdate": "Sie haben keine Berechtigung, Ihren Warenkorb zu aktualisieren.",
+    "noPermissionRemove": "Sie haben keine Berechtigung, Artikel aus Ihrem Warenkorb zu entfernen.",
+    "itemRemoved": "Artikel aus dem Warenkorb entfernt"
+  },
+  "checkout": {
+    "title": "Kasse",
+    "orderSummary": "Bestellübersicht",
+    "shippingInfo": "Versandinformationen",
+    "paymentInfo": "Zahlungsinformationen",
+    "placeOrder": "Bestellung aufgeben",
+    "orderConfirmation": "Bestellbestätigung",
+    "orderNumber": "Bestellnummer",
+    "orderDate": "Bestelldatum",
+    "estimatedDelivery": "Geschätzte Lieferung",
+    "thankYou": "Vielen Dank für Ihre Bestellung!"
+  }
+} 

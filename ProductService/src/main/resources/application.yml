@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: ProductService
+  datasource:
+    url: jdbc:postgresql://localhost:5433/product_db
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+  liquibase:
+    change-log: classpath:db/changelog/changelog-master.xml
+
+server:
+  port: 8085
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    preferIpAddress: true      # tell Eureka to publish an IP, not the host name
+    ip-address: host.docker.internal       # works locally; change if you run in Docker/VPS
+    instance-id: ${spring.application.name}:${server.port}
+
+jwt:
+  secret: ${JWT_SECRET:HMHHFu9OkiscolD1SI+H7Ae5aBwJiw8vyMfcFkZOtYFI4mljUvsHONlsRFlVsYjYg1MlndmrYyJb5aYT/aq1NQ==}
+logging:
+  level:
+    org.springframework.security: DEBUG
+minio:
+  endpoint: http://localhost:9000       # or http://minio:9000 in Docker
+  accessKey: minio
+  secretKey: secret123
+  bucket: product-images

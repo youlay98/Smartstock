@@ -1,0 +1,52 @@
+{
+  "name": "smartfrontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:run": "vitest run",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "check-i18n": "node scripts/check-i18n.js"
+  },
+  "dependencies": {
+    "-": "^0.0.1",
+    "axios": "^1.8.1",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^4.5.0",
+    "echarts": "^5.5.0",
+    "install": "^0.13.0",
+    "jwt-decode": "^4.0.0",
+    "lazyload": "^2.0.0-rc.2",
+    "npm": "^11.5.1",
+    "pinia": "^3.0.1",
+    "sass": "^1.71.0",
+    "vue": "^3.5.18",
+    "vue-echarts": "^6.6.1",
+    "vue-i18n": "^9.14.5",
+    "vue-lazyload": "^3.0.0",
+    "vue-router": "^4.5.0",
+    "vue-toastification": "^2.0.0-rc.5"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/user-event": "^14.5.2",
+    "@testing-library/vue": "^8.0.1",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/coverage-v8": "^2.1.0",
+    "@vue/test-utils": "^2.4.0",
+    "cypress": "^14.0.0",
+    "jsdom": "^25.0.0",
+    "msw": "^2.2.3",
+    "pinia": "^3.0.1",
+    "vite": "^6.1.0",
+    "vite-plugin-vue-devtools": "^7.7.2",
+    "vitest": "^2.1.0"
+  }
+}

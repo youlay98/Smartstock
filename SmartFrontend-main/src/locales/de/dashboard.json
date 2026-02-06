@@ -1,0 +1,34 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Willkommen zurück",
+    "overview": "Übersicht",
+    "recentActivity": "Letzte Aktivitäten",
+    "quickActions": "Schnellaktionen",
+    "statistics": "Statistiken",
+    "charts": "Diagramme"
+  },
+  "stats": {
+    "totalSales": "Gesamtumsatz",
+    "totalOrders": "Gesamtbestellungen",
+    "totalProducts": "Gesamtprodukte",
+    "totalCustomers": "Gesamtkunden",
+    "revenue": "Umsatz",
+    "orders": "Bestellungen",
+    "products": "Produkte",
+    "customers": "Kunden",
+    "thisMonth": "Diesen Monat",
+    "thisWeek": "Diese Woche",
+    "today": "Heute"
+  },
+  "admin": {
+    "adminDashboard": "Admin Dashboard",
+    "systemOverview": "Systemübersicht",
+    "manageProducts": "Produkte verwalten",
+    "manageOrders": "Bestellungen verwalten",
+    "manageCustomers": "Kunden verwalten",
+    "systemSettings": "Systemeinstellungen",
+    "reports": "Berichte",
+    "analytics": "Analysen"
+  }
+} 
