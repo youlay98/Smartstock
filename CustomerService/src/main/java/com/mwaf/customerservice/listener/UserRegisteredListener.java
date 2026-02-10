@@ -1,7 +1,7 @@
 package com.mwaf.customerservice.listener;
 
 import com.mwaf.customerservice.config.RabbitMQConfig;
-import com.mwaf.customerservice.dto.CreateCustomerRequest;
+import com.mwaf.customerservice.model.Customer;
 import com.mwaf.customerservice.event.UserRegisteredEvent;
 import com.mwaf.customerservice.service.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +21,14 @@ public class UserRegisteredListener {
         log.info("Received UserRegisteredEvent for user: {}", event.getUsername());
 
         try {
-            CreateCustomerRequest customerRequest = new CreateCustomerRequest();
-            customerRequest.setUserId(event.getUserId());
-            customerRequest.setEmail(event.getEmail());
-            customerRequest.setName(event.getName());
-            customerRequest.setPhone(event.getPhone());
-            customerRequest.setAddress(event.getAddress());
+            Customer customer = new Customer();
+            customer.setUserId(event.getUserId());
+            customer.setEmail(event.getEmail());
+            customer.setName(event.getName());
+            customer.setPhone(event.getPhone());
+            customer.setAddress(event.getAddress());
 
-            customerService.createCustomer(customerRequest);
+            customerService.createCustomer(customer);
             log.info("Successfully created customer for user: {}", event.getUsername());
         } catch (Exception e) {
             log.error("Failed to create customer for user: {}", event.getUsername(), e);

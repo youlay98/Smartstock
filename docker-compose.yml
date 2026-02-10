@@ -15,6 +15,11 @@ services:
     restart: unless-stopped
     networks:
       - smartstock-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -23,10 +28,15 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     networks:
       - smartstock-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   eureka-server:
     build:
@@ -40,7 +50,7 @@ services:
     networks:
       - smartstock-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      test: wget --no-verbose --tries=1 --spider http://localhost:8761/actuator/health || exit 1
       interval: 30s
       timeout: 10s
       retries: 5
@@ -56,33 +66,159 @@ services:
     depends_on:
       eureka-server:
         condition: service_healthy
+    env_file: .env
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SERVER_PORT=8080
+      - JWT_SECRET=${JWT_SECRET}
     restart: unless-stopped
     networks:
       - smartstock-network
 
-  # Databases for Microservices
+  auth-service:
+    build: ./AuthService
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      auth-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/${POSTGRES_DB:-auth_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - CUSTOMER_SERVICE_URL=http://customer-service:8082
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - smartstock-network
+
+  customer-service:
+    build: ./CustomerService
+    container_name: customer-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      customer-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://customer-db:5432/customer_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - smartstock-network
+
+  product-service:
+    build: ./ProductService
+    container_name: product-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      product-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://product-db:5432/product_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - MINIO_ENDPOINT=http://minio:9000
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - smartstock-network
+
+  order-service:
+    build: ./OrderService
+    container_name: order-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      order-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://order-db:5432/order_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - PRODUCT_SERVICE_URL=http://product-service:8085
+      - CUSTOMER_SERVICE_URL=http://customer-service:8082
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - smartstock-network
+
+  cart-service:
+    build: ./CartService
+    container_name: cart-service
+    ports:
+      - "8087:8087"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      cart-db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://cart-db:5432/cart_db
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - smartstock-network
+
+  # Databases
   auth-db:
     image: postgres:15-alpine
     container_name: auth-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: auth_db
     ports:
-      - "5432:5432" # Exposed for local debugging/running app on host
+      - "5432:5432"
     volumes:
       - auth-db-data:/var/lib/postgresql/data
     networks:
       - smartstock-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   product-db:
     image: postgres:15-alpine
     container_name: product-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: product_db
     ports:
       - "5433:5432"
@@ -90,13 +226,18 @@ services:
       - product-db-data:/var/lib/postgresql/data
     networks:
       - smartstock-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   order-db:
     image: postgres:15-alpine
     container_name: order-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: order_db
     ports:
       - "5434:5432"
@@ -104,13 +245,18 @@ services:
       - order-db-data:/var/lib/postgresql/data
     networks:
       - smartstock-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   customer-db:
     image: postgres:15-alpine
     container_name: customer-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: customer_db
     ports:
       - "5435:5432"
@@ -118,13 +264,18 @@ services:
       - customer-db-data:/var/lib/postgresql/data
     networks:
       - smartstock-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   cart-db:
     image: postgres:15-alpine
     container_name: cart-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: cart_db
     ports:
       - "5436:5432"
@@ -132,21 +283,28 @@ services:
       - cart-db-data:/var/lib/postgresql/data
     networks:
       - smartstock-network
-  # Uncomment these if you want to run the apps in Docker as well
-  # Ensure you run 'mvn clean package -DskipTests' first to generate JARs if using simple Dockerfiles
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # auth-service:
-  #   build: ./AuthService
-  #   depends_on:
-  #     - eureka-server
-  #     - auth-db
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-db:5432/auth_db
-  #     - SPRING_DATASOURCE_USERNAME=postgres
-  #     - SPRING_DATASOURCE_PASSWORD=password
-  #     - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-  #   networks:
-  #     - smartstock-network
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    depends_on:
+      - auth-db
+      - product-db
+      - order-db
+      - customer-db
+      - cart-db
+    networks:
+      - smartstock-network
 
 networks:
   smartstock-network:

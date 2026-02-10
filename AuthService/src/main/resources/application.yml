@@ -21,10 +21,10 @@ server:
 
 customer:
   service:
-    url: http://localhost:8082
+    url: ${CUSTOMER_SERVICE_URL:http://localhost:8082}
 
 jwt:
-  secret: HMHHFu9OkiscolD1SI+H7Ae5aBwJiw8vyMfcFkZOtYFI4mljUvsHONlsRFlVsYjYg1MlndmrYyJb5aYT/aq1NQ==
+  secret: ${JWT_SECRET:HMHHFu9OkiscolD1SI+H7Ae5aBwJiw8vyMfcFkZOtYFI4mljUvsHONlsRFlVsYjYg1MlndmrYyJb5aYT/aq1NQ==}
 
 admin:
   registration:
