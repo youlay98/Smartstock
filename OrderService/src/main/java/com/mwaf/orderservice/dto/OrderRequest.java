@@ -1,19 +1,29 @@
 package com.mwaf.orderservice.dto;
 
-
-
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.List;
-@Data
-@Getter
-@Setter
+import java.math.BigDecimal;
+
 public class OrderRequest {
     // List of order items details that the client will send
     private List<OrderItemRequest> orderItems;
+    private BigDecimal totalAmount;
 
+    public OrderRequest() {
+    }
 
+    public List<OrderItemRequest> getOrderItems() {
+        return orderItems;
+    }
 
+    public void setOrderItems(List<OrderItemRequest> orderItems) {
+        this.orderItems = orderItems;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
 }

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class OrderController {
 
     private final OrderService orderService;
-    
+
     @Autowired
     private JwtUtil jwtUtil;
 
@@ -43,14 +43,14 @@ public class OrderController {
     public ResponseEntity<Order> createOrder(@RequestBody OrderRequest orderRequest) {
         // Get the authenticated user from the security context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         System.out.println("Authentication: " + authentication);
         System.out.println("Is authenticated: " + (authentication != null && authentication.isAuthenticated()));
         System.out.println("Principal: " + (authentication != null ? authentication.getPrincipal() : "null"));
         System.out.println("Credentials: " + (authentication != null ? authentication.getCredentials() : "null"));
         System.out.println("Details: " + (authentication != null ? authentication.getDetails() : "null"));
         System.out.println("Authorities: " + (authentication != null ? authentication.getAuthorities() : "null"));
-        
+
         if (authentication != null && authentication.isAuthenticated()) {
 
             Long customerId = null;
@@ -59,35 +59,38 @@ public class OrderController {
                 customerId = (Long) details.get("customerId");
                 System.out.println("CustomerId from details: " + customerId);
             }
-            
+
             // If customerId is still null, try to get it from the token
             if (customerId == null && authentication.getCredentials() instanceof String) {
                 String token = (String) authentication.getCredentials();
                 customerId = jwtUtil.getCustomerIdFromToken(token);
                 System.out.println("CustomerId from token: " + customerId);
             }
-            
+
             if (customerId != null) {
                 // Convert OrderRequest to Order entity
                 Order order = new Order();
                 order.setCustomerId(customerId);
                 order.setStatus("NEW");
                 order.setOrderDate(LocalDateTime.now());
-                
+
+                order.setTotalAmount(orderRequest.getTotalAmount());
+
                 // Convert OrderItemRequest to OrderItem entities
                 if (orderRequest.getOrderItems() != null) {
                     List<OrderItem> orderItems = orderRequest.getOrderItems().stream()
-                        .map(itemRequest -> {
-                            OrderItem item = new OrderItem();
-                            item.setProductId(itemRequest.getProductId());
-                            item.setQuantity(itemRequest.getQuantity());
-                            item.setOrder(order);
-                            return item;
-                        })
-                        .collect(Collectors.toList());
+                            .map(itemRequest -> {
+                                OrderItem item = new OrderItem();
+                                item.setProductId(itemRequest.getProductId());
+                                item.setQuantity(itemRequest.getQuantity());
+                                item.setUnitPrice(itemRequest.getUnitPrice());
+                                item.setOrder(order);
+                                return item;
+                            })
+                            .collect(Collectors.toList());
                     order.setOrderItems(orderItems);
                 }
-                
+
                 try {
                     Order placedOrder = orderService.createOrder(order);
                     return ResponseEntity.status(HttpStatus.CREATED).body(placedOrder);
@@ -98,7 +101,7 @@ public class OrderController {
                 }
             }
         }
-        
+
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
@@ -114,21 +117,43 @@ public class OrderController {
     public ResponseEntity<List<Order>> getAllOrders() {
         // Get the authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
+
         // Check if user has ROLE_ADMIN
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        
+
         List<Order> orders;
         if (isAdmin) {
             // Admins can see all orders
             orders = orderService.getAllOrders();
         } else {
             // Regular users can only see their own orders
-            String userId = authentication.getName();
-            orders = orderService.getOrdersByCustomer(Long.valueOf(userId));
+            Long customerId = null;
+            if (authentication.getDetails() instanceof Map) {
+                Map<String, Object> details = (Map<String, Object>) authentication.getDetails();
+                customerId = (Long) details.get("customerId");
+            }
+
+            // Fallback: try to get it from the token credentials if details failed
+            if (customerId == null && authentication.getCredentials() instanceof String) {
+                try {
+                    String token = (String) authentication.getCredentials();
+                    customerId = jwtUtil.getCustomerIdFromToken(token);
+                } catch (Exception e) {
+                    System.err.println("Failed to extract customerId from token in getAllOrders: " + e.getMessage());
+                }
+            }
+
+            if (customerId != null) {
+                orders = orderService.getOrdersByCustomer(customerId);
+            } else {
+                // return empty list if customerId cannot be found, or throw exception
+                // For now, empty list is safer than crashing
+                orders = List.of();
+                System.err.println("Could not determine customerId for user: " + authentication.getName());
+            }
         }
-        
+
         return ResponseEntity.ok(orders);
     }
 

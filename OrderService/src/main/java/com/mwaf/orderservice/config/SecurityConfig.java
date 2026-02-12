@@ -20,32 +20,26 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(com.mwaf.orderservice.util.JwtUtil jwtUtil) {
+        return new JwtAuthenticationFilter(jwtUtil);
+    }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
+            throws Exception {
         http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // JWT AUTHENTICATION ENABLED - users must be logged in
+                        // AUTHORIZATION DISABLED - any authenticated user can do anything (no role
+                        // checks)
+                        .anyRequest().authenticated())
+                .addFilterAfter(jwtAuthenticationFilter,
+                        org.springframework.security.web.context.SecurityContextHolderFilter.class);
 
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Allow all authenticated users to place orders
-                .requestMatchers(HttpMethod.POST, "/api/orders/placeOrder").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/orders").authenticated()
-                // Admin can access all order endpoints
-                .requestMatchers(HttpMethod.GET, "/api/orders").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
-                // Users can view their own orders
-                .requestMatchers(HttpMethod.GET, "/api/orders/byCustomer/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/orders/{id}").authenticated()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-            
         return http.build();
     }
-    
 
 }
