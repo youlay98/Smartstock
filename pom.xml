@@ -23,6 +23,7 @@
         <module>ProductService</module>
         <module>OrderService</module>
         <module>CartService</module>
+        <module>NotificationService</module>
     </modules>
 
     <properties>
