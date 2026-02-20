@@ -50,7 +50,7 @@ eureka:
     fetch-registry: true
   instance:
     preferIpAddress: true
-    ip-address: host.docker.internal
+    # ip-address: host.docker.internal
     instance-id: ${spring.application.name}:${server.port}
 
 logging:

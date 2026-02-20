@@ -14,15 +14,24 @@ import org.springframework.stereotype.Component;
 public class OrderPlacedEventListener {
 
     private final NotificationService notificationService;
+    private final com.mwaf.notificationservice.client.CustomerServiceClient customerServiceClient;
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_PLACED_QUEUE)
     public void handleOrderPlacedEvent(OrderPlacedEvent event) {
         log.info("Received OrderPlacedEvent for order: {}", event.getOrderId());
         try {
-            // TODO: In a real implementation, we would fetch customer email from CustomerService
-            // For now, we'll use a placeholder or skip email sending if customerId is not resolved
-            // You can enhance this by adding a Feign client to CustomerService
-            String customerEmail = "customer@example.com"; // Placeholder
+            String customerEmail = "customer@example.com"; // Default fallback
+            if (event.getCustomerId() != null) {
+                try {
+                    com.mwaf.notificationservice.dto.CustomerDTO customer = customerServiceClient.getCustomerByUserId(event.getCustomerId());
+                    if (customer != null && customer.getEmail() != null) {
+                        customerEmail = customer.getEmail();
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to fetch customer email for customerId: {}", event.getCustomerId(), e);
+                }
+            }
+            
             notificationService.sendOrderConfirmationEmail(event, customerEmail);
         } catch (Exception e) {
             log.error("Error processing OrderPlacedEvent for order: {}", event.getOrderId(), e);

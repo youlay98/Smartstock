@@ -32,9 +32,9 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
   instance:
-    preferIpAddress: true      # tell Eureka to publish an IP, not the host name
-    ip-address: host.docker.internal       # works locally; change if you run in Docker/VPS
-    instance-id: ${spring.application.name}:${server.port}   # tell Eureka to publish an IP, not the host name
+    preferIpAddress: true
+    # ip-address: host.docker.internal
+    instance-id: ${spring.application.name}:${server.port}
 
 
 jwt:
