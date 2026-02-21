@@ -32,7 +32,17 @@ public class RabbitMQConfig {
 
     @Bean
     public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+        org.springframework.amqp.support.converter.DefaultClassMapper classMapper = new org.springframework.amqp.support.converter.DefaultClassMapper();
+        classMapper.setTrustedPackages("*");
+
+        java.util.Map<String, Class<?>> idClassMapping = new java.util.HashMap<>();
+        idClassMapping.put("com.mwaf.authservice.event.UserRegisteredEvent",
+                com.mwaf.customerservice.event.UserRegisteredEvent.class);
+        classMapper.setIdClassMapping(idClassMapping);
+
+        converter.setClassMapper(classMapper);
+        return converter;
     }
 
     @Bean

@@ -39,3 +39,7 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET:HMHHFu9OkiscolD1SI+H7Ae5aBwJiw8vyMfcFkZOtYFI4mljUvsHONlsRFlVsYjYg1MlndmrYyJb5aYT/aq1NQ==}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
