@@ -22,15 +22,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     // Define public endpoints that don't require authentication
     private final List<String> publicEndpoints = List.of(
-        "/api/auth/register",
-        "/api/auth/login",
-        "/api/auth/admin/register"
-    );
+            "/api/auth/register",
+            "/api/auth/login",
+            "/api/auth/admin/register",
+            "/ws");
 
-    // Define endpoints that are publicly readable but require auth for modifications
+    // Define endpoints that are publicly readable but require auth for
+    // modifications
     private final List<String> publicReadEndpoints = List.of(
-        "/api/products"
-    );
+            "/api/products");
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -38,18 +38,23 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         String path = request.getPath().toString();
         String method = request.getMethod().toString();
 
+        System.out.println("Gateway Filter matching path: " + path);
+
         // Skip validation for public endpoints
         if (isPublicEndpoint(path)) {
+            System.out.println("Allowing public endpoint: " + path);
             return chain.filter(exchange);
         }
 
         // Allow GET requests to public read endpoints
         if (isPublicReadEndpoint(path) && "GET".equals(method)) {
+            System.out.println("Allowing public read endpoint: " + path);
             return chain.filter(exchange);
         }
 
         // Check for Authorization header
         if (!request.getHeaders().containsKey("Authorization")) {
+            System.out.println("Rejecting request: No Auth header for path " + path);
             return onError(exchange, "No Authorization header", HttpStatus.UNAUTHORIZED);
         }
 
@@ -66,10 +71,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         // Add user info to request headers for downstream services
         ServerHttpRequest modifiedRequest = request.mutate()
-            .header("X-User-Id", jwtUtil.getUserId(token))
-            .header("X-Customer-Id", String.valueOf(jwtUtil.getCustomerId(token)))
-            .header("X-User-Roles", String.join(",", jwtUtil.getRoles(token)))
-            .build();
+                .header("X-User-Id", jwtUtil.getUserId(token))
+                .header("X-Customer-Id", String.valueOf(jwtUtil.getCustomerId(token)))
+                .header("X-User-Roles", String.join(",", jwtUtil.getRoles(token)))
+                .build();
 
         return chain.filter(exchange.mutate().request(modifiedRequest).build());
     }

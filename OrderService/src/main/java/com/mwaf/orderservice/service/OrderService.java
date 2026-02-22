@@ -7,6 +7,7 @@ import com.mwaf.orderservice.client.ProductServiceClient;
 
 import com.mwaf.orderservice.config.RabbitMQConfig;
 import com.mwaf.orderservice.event.OrderPlacedEvent;
+import com.mwaf.orderservice.event.OrderStatusChangedEvent;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.mwaf.orderservice.repository.OrderRepository;
 import org.springframework.stereotype.Service;
@@ -126,13 +127,31 @@ public class OrderService {
     // Update an existing order
     public Order updateOrder(Long id, Order orderDetails) {
         Order existingOrder = getOrderById(id);
+        String oldStatus = existingOrder.getStatus();
 
         // Only update fields that you actually want changed:
         if (orderDetails.getStatus() != null) {
             existingOrder.setStatus(orderDetails.getStatus());
         }
 
-        return orderRepository.save(existingOrder);
+        Order savedOrder = orderRepository.save(existingOrder);
+
+        if (orderDetails.getStatus() != null && !orderDetails.getStatus().equals(oldStatus)) {
+            try {
+                OrderStatusChangedEvent event = new OrderStatusChangedEvent(
+                        savedOrder.getId(),
+                        savedOrder.getCustomerId(),
+                        savedOrder.getStatus());
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.ORDER_EXCHANGE,
+                        RabbitMQConfig.ORDER_STATUS_CHANGED_ROUTING_KEY,
+                        event);
+            } catch (Exception e) {
+                System.err.println("Failed to publish OrderStatusChangedEvent: " + e.getMessage());
+            }
+        }
+
+        return savedOrder;
     }
 
     // Delete an order by its ID

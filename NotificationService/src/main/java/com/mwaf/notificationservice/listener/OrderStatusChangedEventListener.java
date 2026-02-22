@@ -1,7 +1,7 @@
 package com.mwaf.notificationservice.listener;
 
 import com.mwaf.notificationservice.config.RabbitMQConfig;
-import com.mwaf.notificationservice.event.OrderPlacedEvent;
+import com.mwaf.notificationservice.event.OrderStatusChangedEvent;
 import com.mwaf.notificationservice.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,16 +11,17 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class OrderPlacedEventListener {
+public class OrderStatusChangedEventListener {
 
     private final NotificationService notificationService;
     private final com.mwaf.notificationservice.client.CustomerServiceClient customerServiceClient;
 
-    @RabbitListener(queues = RabbitMQConfig.ORDER_PLACED_QUEUE)
-    public void handleOrderPlacedEvent(OrderPlacedEvent event) {
-        log.info("Received OrderPlacedEvent for order: {}", event.getOrderId());
+    @RabbitListener(queues = RabbitMQConfig.ORDER_STATUS_CHANGED_QUEUE)
+    public void handleOrderStatusChangedEvent(OrderStatusChangedEvent event) {
+        log.info("Received OrderStatusChangedEvent for order: {} to status {}", event.getOrderId(),
+                event.getNewStatus());
         try {
-            String customerEmail = "customer@example.com"; // Default fallback
+            String customerEmail = "customer@example.com";
             if (event.getCustomerId() != null) {
                 try {
                     com.mwaf.notificationservice.dto.CustomerDTO customer = customerServiceClient
@@ -33,10 +34,10 @@ public class OrderPlacedEventListener {
                 }
             }
 
-            notificationService.sendOrderConfirmationEmail(event, customerEmail);
+            notificationService.sendOrderStatusUpdate(event, customerEmail);
         } catch (Exception e) {
-            log.error("Error processing OrderPlacedEvent for order: {}", event.getOrderId(), e);
-            throw new RuntimeException("Failed to process OrderPlacedEvent, routing to DLQ", e);
+            log.error("Error processing OrderStatusChangedEvent for order: {}", event.getOrderId(), e);
+            throw new RuntimeException("Failed to process OrderStatusChangedEvent, routing to DLQ", e);
         }
     }
 }

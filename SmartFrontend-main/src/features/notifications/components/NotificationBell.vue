@@ -320,7 +320,7 @@ const toggleDropdown = () => {
   if (!props.showDropdown) return
   
   isDropdownOpen.value = !isDropdownOpen.value
-  if (isDropdownOpen.value) {
+  if (isDropdownOpen.value && authStore.user?.roles?.includes('ROLE_ADMIN')) {
     loadNotifications()
   }
 }

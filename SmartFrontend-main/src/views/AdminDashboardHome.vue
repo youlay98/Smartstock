@@ -5,11 +5,14 @@
     <main class="main-content">
       <div class="dashboard-header">
         <h1>Admin Dashboard</h1>
-        <div class="user-welcome">
-          <span>Welcome,</span>
-          <strong>{{ user.username }}</strong>
-          <div class="user-avatar">
-            <i class="bi bi-person-circle"></i>
+        <div class="header-actions">
+          <NotificationBell />
+          <div class="user-welcome">
+            <span>Welcome,</span>
+            <strong>{{ user.username }}</strong>
+            <div class="user-avatar">
+              <i class="bi bi-person-circle"></i>
+            </div>
           </div>
         </div>
       </div>
@@ -138,6 +141,7 @@
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Sidebar from '@/components/Sidebar.vue';
+import NotificationBell from '@/features/notifications/components/NotificationBell.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useAnalytics } from '@/lib/analytics/useAnalytics';
 // Import Chart.js properly

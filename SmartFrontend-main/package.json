@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "-": "^0.0.1",
+    "@stomp/stompjs": "^7.3.0",
     "axios": "^1.8.1",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.5.0",

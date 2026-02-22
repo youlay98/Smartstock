@@ -15,6 +15,11 @@ public class RabbitMQConfig {
     public static final String USER_REGISTERED_QUEUE = "user-registered-queue";
     public static final String ROUTING_KEY = "auth.user.registered";
 
+    // DLQ Constants
+    public static final String DLX_EXCHANGE = "dlx.exchange";
+    public static final String USER_REGISTERED_DLQ = "user-registered-dlq";
+    public static final String DLQ_ROUTING_KEY = "auth.user.registered.dlq";
+
     @Bean
     public TopicExchange authExchange() {
         return new TopicExchange(AUTH_EXCHANGE);
@@ -22,12 +27,31 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue userRegisteredQueue() {
-        return new Queue(USER_REGISTERED_QUEUE);
+        return QueueBuilder.durable(USER_REGISTERED_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX_EXCHANGE)
+                .withArgument("x-dead-letter-routing-key", DLQ_ROUTING_KEY)
+                .build();
+    }
+
+    // DLQ Beans
+    @Bean
+    public TopicExchange deadLetterExchange() {
+        return new TopicExchange(DLX_EXCHANGE);
     }
 
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+    public Queue userRegisteredDlq() {
+        return QueueBuilder.durable(USER_REGISTERED_DLQ).build();
+    }
+
+    @Bean
+    public Binding dlqBinding(Queue userRegisteredDlq, TopicExchange deadLetterExchange) {
+        return BindingBuilder.bind(userRegisteredDlq).to(deadLetterExchange).with(DLQ_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding binding(Queue userRegisteredQueue, TopicExchange authExchange) {
+        return BindingBuilder.bind(userRegisteredQueue).to(authExchange).with(ROUTING_KEY);
     }
 
     @Bean

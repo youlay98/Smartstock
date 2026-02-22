@@ -32,8 +32,7 @@ public class UserRegisteredListener {
             log.info("Successfully created customer for user: {}", event.getUsername());
         } catch (Exception e) {
             log.error("Failed to create customer for user: {}", event.getUsername(), e);
-            // In a real system, you might want to throw the exception to NACK the message
-            // and have it retried or dead-lettered.
+            throw new RuntimeException("Failed to create customer, routing to DLQ", e);
         }
     }
 }

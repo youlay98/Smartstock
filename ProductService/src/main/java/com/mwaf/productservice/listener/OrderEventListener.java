@@ -33,8 +33,7 @@ public class OrderEventListener {
                     productService.reduceStock(item.getProductId(), item.getQuantity());
                 } catch (Exception e) {
                     log.error("Failed to reduce stock for product: " + item.getProductId(), e);
-                    // Decide on compensation logic (e.g., cancel order) - Out of scope for this
-                    // task
+                    throw new RuntimeException("Failed to reduce stock, routing to DLQ", e);
                 }
             }
         }

@@ -22,6 +22,7 @@ public class UserRegisteredEventListener {
             notificationService.sendWelcomeEmail(event);
         } catch (Exception e) {
             log.error("Error processing UserRegisteredEvent for user: {}", event.getEmail(), e);
+            throw new RuntimeException("Failed to process UserRegisteredEvent, routing to DLQ", e);
         }
     }
 }

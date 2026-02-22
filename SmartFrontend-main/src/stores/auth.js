@@ -1,14 +1,15 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { loginUser as apiLogin, register as apiRegister } from '@/services/authService';
+import { notificationWebSocket } from '@/services/notificationWebSocket';
 
 // Helper function for safe JSON parsing
 function safeParse(json) {
-  try {
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
+    try {
+        return JSON.parse(json);
+    } catch {
+        return null;
+    }
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -59,6 +60,9 @@ export const useAuthStore = defineStore('auth', () => {
             };
 
             localStorage.setItem('user', JSON.stringify(user.value));
+
+            // Connect to real-time notifications once user info is loaded
+            notificationWebSocket.connect(user.value);
         } catch (error) {
             console.error('Error parsing JWT token:', error);
         }
@@ -80,6 +84,9 @@ export const useAuthStore = defineStore('auth', () => {
         token.value = null;
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+
+        // Disconnect real-time notifications
+        notificationWebSocket.disconnect();
     }
 
     return {

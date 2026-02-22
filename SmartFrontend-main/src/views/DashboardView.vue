@@ -58,7 +58,6 @@
           <LanguageSwitcher />
           
           <NotificationBell
-            v-if="isAdmin"
             @notification-click="handleNotificationClick"
           />
           
