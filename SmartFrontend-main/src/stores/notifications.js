@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { 
-  getNotifications, 
-  markNotificationAsRead, 
-  getUnreadNotificationCount 
+import {
+  getAdminNotifications,
+  markAdminNotificationAsRead,
+  getAdminUnreadCount,
+  getGeneralNotifications,
+  markGeneralNotificationAsRead,
+  getGeneralUnreadCount
 } from '@/services/notificationService'
 import { showSuccessToast } from '@/services/api'
 
@@ -21,21 +24,21 @@ export const useNotificationStore = defineStore('notifications', () => {
   const pollingInterval = ref(null)
 
   // Computed
-  const unreadNotifications = computed(() => 
+  const unreadNotifications = computed(() =>
     notifications.value.filter(n => !n.read)
   )
 
-  const readNotifications = computed(() => 
+  const readNotifications = computed(() =>
     notifications.value.filter(n => n.read)
   )
 
   const hasUnread = computed(() => unreadCount.value > 0)
 
-  const lowStockNotifications = computed(() => 
+  const lowStockNotifications = computed(() =>
     notifications.value.filter(n => n.type === 'LOW_STOCK' && !n.read)
   )
 
-  const criticalStockNotifications = computed(() => 
+  const criticalStockNotifications = computed(() =>
     notifications.value.filter(n => n.type === 'LOW_STOCK' && n.currentStock <= 2 && !n.read)
   )
 
@@ -44,20 +47,89 @@ export const useNotificationStore = defineStore('notifications', () => {
     try {
       isLoading.value = true
       error.value = null
-      
-      const response = await getNotifications(filters.value.read, filters.value.page, filters.value.size)
-      notifications.value = response.data.content || response.data || []
-    } catch (err) {
-      // Check if it's a 404 error (backend not available)
-      if (err.response && err.response.status === 404) {
-        console.warn('Notification API not available - backend service may not be running')
-        error.value = 'Notification service not available'
-        notifications.value = []
-      } else {
-        error.value = 'Failed to load notifications'
-        console.error('Error loading notifications:', err)
-        notifications.value = []
+
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      const isAdmin = authStore.user?.roles?.includes('ROLE_ADMIN')
+      const userId = authStore.user?.id
+
+      let allNotifications = []
+
+      // Fetch General
+      try {
+        const generalResponse = await getGeneralNotifications(filters.value.read, filters.value.page, filters.value.size, userId)
+        const generalList = generalResponse.data.content || generalResponse.data || []
+        allNotifications.push(...generalList.map(n => {
+          let cleanMessage = n.content || '';
+          if (cleanMessage.includes('<') && cleanMessage.includes('>')) {
+            const tmp = document.createElement("DIV");
+            tmp.innerHTML = cleanMessage;
+            const stylesAndScripts = tmp.querySelectorAll('script, style');
+            stylesAndScripts.forEach(el => el.remove());
+            cleanMessage = (tmp.textContent || tmp.innerText || "").replace(/\s+/g, ' ').trim();
+          }
+          return {
+            ...n,
+            id: `gen_${n.id}`,
+            originalId: n.id,
+            title: n.subject,
+            message: cleanMessage,
+            read: n.status === 'READ',
+            isGeneral: true
+          }
+        }))
+      } catch (err) {
+        console.error('Error general notifications:', err)
       }
+
+      // Fetch Admin
+      if (isAdmin) {
+        try {
+          const adminResponse = await getAdminNotifications(filters.value.read, filters.value.page, filters.value.size)
+          const adminList = adminResponse.data.content || adminResponse.data || []
+          allNotifications.push(...adminList.map(n => ({
+            ...n,
+            id: `admin_${n.id}`,
+            originalId: n.id,
+            isGeneral: false
+          })))
+        } catch (err) {
+          console.error('Error admin notifications:', err)
+        }
+
+        try {
+          const adminGeneralResponse = await getGeneralNotifications(filters.value.read, filters.value.page, filters.value.size, 0)
+          const adminGeneralList = adminGeneralResponse.data.content || adminGeneralResponse.data || []
+          allNotifications.push(...adminGeneralList.map(n => {
+            let cleanMessage = n.content || '';
+            if (cleanMessage.includes('<') && cleanMessage.includes('>')) {
+              const tmp = document.createElement("DIV");
+              tmp.innerHTML = cleanMessage;
+              const stylesAndScripts = tmp.querySelectorAll('script, style');
+              stylesAndScripts.forEach(el => el.remove());
+              cleanMessage = (tmp.textContent || tmp.innerText || "").replace(/\s+/g, ' ').trim();
+            }
+            return {
+              ...n,
+              id: `gen_${n.id}`,
+              originalId: n.id,
+              title: n.subject,
+              message: cleanMessage,
+              read: n.status === 'READ',
+              isGeneral: true
+            }
+          }))
+        } catch (err) {
+          console.error('Error global admin general notifications:', err)
+        }
+      }
+
+      allNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      notifications.value = allNotifications
+    } catch (err) {
+      error.value = 'Failed to load notifications'
+      console.error('Error loading notifications:', err)
+      notifications.value = []
     } finally {
       isLoading.value = false
     }
@@ -65,33 +137,57 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   async function loadUnreadCount() {
     try {
-      const response = await getUnreadNotificationCount()
-      unreadCount.value = response.data || 0
-    } catch (err) {
-      // Check if it's a 404 error (backend not available)
-      if (err.response && err.response.status === 404) {
-        console.warn('Notification API not available - backend service may not be running')
-        unreadCount.value = 0
-      } else {
-        console.error('Error loading unread count:', err)
-        unreadCount.value = 0
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      const isAdmin = authStore.user?.roles?.includes('ROLE_ADMIN')
+      const userId = authStore.user?.id
+
+      let totalUnread = 0
+
+      try {
+        const generalResponse = await getGeneralUnreadCount(userId)
+        totalUnread += (generalResponse.data || 0)
+      } catch (err) { }
+
+      if (isAdmin) {
+        try {
+          const adminResponse = await getAdminUnreadCount()
+          totalUnread += (adminResponse.data || 0)
+        } catch (err) { }
+
+        try {
+          const adminGeneralResponse = await getGeneralUnreadCount(0)
+          totalUnread += (adminGeneralResponse.data || 0)
+        } catch (err) { }
       }
+
+      unreadCount.value = totalUnread
+    } catch (err) {
+      console.error('Error loading unread count:', err)
+      unreadCount.value = 0
     }
   }
 
   async function markAsRead(notificationId) {
     try {
-      await markNotificationAsRead(notificationId)
-      
-      // Update local state
       const notification = notifications.value.find(n => n.id === notificationId)
-      if (notification) {
-        notification.read = true
+      if (!notification) return
+
+      if (notification.isGeneral) {
+        await markGeneralNotificationAsRead(notification.originalId)
+      } else {
+        await markAdminNotificationAsRead(notification.originalId)
       }
-      
+
+      // Update local state
+      notification.read = true
+      if (notification.isGeneral) {
+        notification.status = 'READ'
+      }
+
       // Update unread count
       await loadUnreadCount()
-      
+
       showSuccessToast('Notification marked as read')
     } catch (err) {
       error.value = 'Failed to mark notification as read'
@@ -102,18 +198,25 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   async function markAllAsRead() {
     try {
-      const unreadIds = unreadNotifications.value.map(n => n.id)
-      
+      const unreadGeneral = unreadNotifications.value.filter(n => n.isGeneral)
+      const unreadAdmin = unreadNotifications.value.filter(n => !n.isGeneral)
+
       // Mark all unread notifications as read
-      await Promise.all(unreadIds.map(id => markNotificationAsRead(id)))
-      
+      await Promise.all([
+        ...unreadGeneral.map(n => markGeneralNotificationAsRead(n.originalId)),
+        ...unreadAdmin.map(n => markAdminNotificationAsRead(n.originalId))
+      ])
+
       // Update local state
       notifications.value.forEach(n => {
-        if (!n.read) n.read = true
+        if (!n.read) {
+          n.read = true
+          if (n.isGeneral) n.status = 'READ'
+        }
       })
-      
+
       unreadCount.value = 0
-      
+
       showSuccessToast('All notifications marked as read')
     } catch (err) {
       error.value = 'Failed to mark all notifications as read'
@@ -139,7 +242,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     if (pollingInterval.value) {
       clearInterval(pollingInterval.value)
     }
-    
+
     // Poll every 30 seconds for new notifications
     pollingInterval.value = setInterval(async () => {
       await loadUnreadCount()
@@ -173,14 +276,14 @@ export const useNotificationStore = defineStore('notifications', () => {
     isLoading,
     error,
     filters,
-    
+
     // Computed
     unreadNotifications,
     readNotifications,
     hasUnread,
     lowStockNotifications,
     criticalStockNotifications,
-    
+
     // Actions
     loadNotifications,
     loadUnreadCount,

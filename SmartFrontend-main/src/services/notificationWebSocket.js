@@ -13,8 +13,8 @@ class NotificationWebSocketService {
             return
         }
 
-        if (this.stompClient && this.stompClient.connected) {
-            console.log('WebSocket already connected')
+        if (this.stompClient) {
+            console.log('WebSocket already initialized or connecting')
             return
         }
 
@@ -96,19 +96,36 @@ class NotificationWebSocketService {
         })
     }
 
-    addToStore(notification) {
+    addToStore(rawNotification) {
         // Dynamically import to avoid circular dependency
         import('@/stores/notifications').then(({ useNotificationStore }) => {
             const store = useNotificationStore()
+
+            // Clean HTML if present
+            let cleanMessage = rawNotification.content || '';
+            if (cleanMessage.includes('<') && cleanMessage.includes('>')) {
+                const tmp = document.createElement("DIV");
+                tmp.innerHTML = cleanMessage;
+                const stylesAndScripts = tmp.querySelectorAll('script, style');
+                stylesAndScripts.forEach(el => el.remove());
+                cleanMessage = (tmp.textContent || tmp.innerText || "").replace(/\s+/g, ' ').trim();
+            }
+
+            const notification = {
+                ...rawNotification,
+                id: `gen_${rawNotification.id}`,
+                originalId: rawNotification.id,
+                title: rawNotification.subject,
+                message: cleanMessage,
+                read: false,
+                isGeneral: true,
+                createdAt: new Date().toISOString()
+            }
+
             // Make sure not already in store
-            const exists = store.notifications.some(n => n.id === notification.id)
+            const exists = store.notifications.some(n => n.originalId === rawNotification.id && n.isGeneral)
             if (!exists) {
-                store.notifications.unshift({
-                    ...notification,
-                    id: notification.id || Date.now() + Math.random(),
-                    read: false,
-                    createdAt: new Date().toISOString()
-                })
+                store.notifications.unshift(notification)
                 store.unreadCount++
             }
         })

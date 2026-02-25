@@ -24,7 +24,7 @@ export function mapErrorToType(error) {
   if (!error || !error.response) {
     return ErrorTypes.NETWORK
   }
-  
+
   const status = error.response.status
   switch (status) {
     case 401:
@@ -88,6 +88,11 @@ export const notificationApi = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
+export const generalNotificationApi = axios.create({
+  baseURL: `${gatewayBase}/notifications`,
+  headers: { 'Content-Type': 'application/json' }
+})
+
 export const orderApi = axios.create({
   baseURL: `${gatewayBase}/orders`,
   headers: { 'Content-Type': 'application/json' }
@@ -112,7 +117,7 @@ export const setupInterceptors = () => {
     console.log('Request method:', config.method)
     console.log('Token exists:', !!token)
     console.log('Token length:', token?.length)
-    
+
     if (token) {
       // Validate token format before using it
       try {
@@ -138,7 +143,7 @@ export const setupInterceptors = () => {
   }
 
   // Apply to all API instances except auth (auth doesn't need token for login/register)
-  const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, orderApi, customerApi]
+  const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, generalNotificationApi, orderApi, customerApi]
   apis.forEach(api => api.interceptors.request.use(interceptor))
 }
 
@@ -154,10 +159,10 @@ export const setupResponseInterceptors = () => {
   const errorInterceptor = (error) => {
     const errorType = mapErrorToType(error)
     const message = getErrorMessage(errorType, error)
-    
+
     // Create a unique key for this error to prevent duplicates
     const errorKey = `${errorType}-${error.response?.status}-${message}`
-    
+
     // Handle network errors (services offline) - don't logout
     if (errorType === ErrorTypes.NETWORK) {
       console.warn('Network error - services may be offline:', error.message)
@@ -169,7 +174,7 @@ export const setupResponseInterceptors = () => {
       }
       return Promise.reject(error)
     }
-    
+
     // Handle authentication errors (401) - only logout for actual auth issues
     if (errorType === ErrorTypes.AUTHENTICATION) {
       // Only logout if we have a token but it's invalid
@@ -185,13 +190,13 @@ export const setupResponseInterceptors = () => {
       }
       return Promise.reject(error)
     }
-    
+
     // Handle authorization errors (403) - only logout for actual permission issues
     if (errorType === ErrorTypes.AUTHORIZATION) {
       // Check if user is logged in
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('user')
-      
+
       if (!token || !user) {
         if (!shownToasts.has(errorKey)) {
           toast.error('Please log in to access this feature')
@@ -202,6 +207,12 @@ export const setupResponseInterceptors = () => {
         // For 403 errors, show warning but don't automatically logout
         // as it might be a temporary permission issue
         if (!shownToasts.has(errorKey)) {
+          console.error(`403 Forbidden from URL: ${error.config?.url}`, error.response?.data)
+          fetch('http://localhost:9999/', {
+            method: 'POST',
+            body: JSON.stringify({ url: error.config?.url, method: error.config?.method, status: error.response?.status, data: error.response?.data }),
+            headers: { 'Content-Type': 'application/json' }
+          }).catch(e => console.error('Failed to report to interceptor', e))
           console.warn('403 Authorization error - user might not have required permissions')
           toast.error('You do not have permission to perform this action.')
           shownToasts.add(errorKey)
@@ -210,19 +221,19 @@ export const setupResponseInterceptors = () => {
       }
       return Promise.reject(error)
     }
-    
+
     // Show toast for other errors (validation, server errors, etc.) - but only once
     if (errorType !== ErrorTypes.NETWORK && !shownToasts.has(errorKey)) {
       toast.error(message)
       shownToasts.add(errorKey)
       setTimeout(() => shownToasts.delete(errorKey), 5000)
     }
-    
+
     return Promise.reject(error)
   }
 
   // Apply to all API instances except auth
-  const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, orderApi, customerApi]
+  const apis = [productApi, categoryApi, reviewApi, cartApi, notificationApi, generalNotificationApi, orderApi, customerApi]
   apis.forEach(api => api.interceptors.response.use(responseInterceptor, errorInterceptor))
 }
 

@@ -54,7 +54,7 @@ public class NotificationService {
         }
     }
 
-    public void sendOrderConfirmationEmail(OrderPlacedEvent event, String customerEmail) {
+    public void sendOrderConfirmationEmail(OrderPlacedEvent event, String customerEmail, Long userId) {
         log.info("Sending order confirmation email for order: {} to: {}", event.getOrderId(), customerEmail);
 
         String subject = "Order Confirmation - Order #" + event.getOrderId();
@@ -63,7 +63,7 @@ public class NotificationService {
         Notification notification = createNotification(
                 NotificationType.EMAIL,
                 customerEmail,
-                event.getCustomerId(),
+                userId,
                 subject,
                 content);
 
@@ -78,11 +78,36 @@ public class NotificationService {
             log.error("Failed to send order confirmation email to: {}", customerEmail, e);
         } finally {
             Notification savedNotification = notificationRepository.save(notification);
+            // Customer gets user WebSocket broadcast, we don't broadcast this specific
+            // email to admins anymore
+            broadcastToUser(userId, savedNotification);
+        }
+    }
+
+    public void sendAdminOrderNotification(OrderPlacedEvent event, String customerEmail, Long customerId) {
+        log.info("Sending admin order notification for order: {}", event.getOrderId());
+
+        String subject = "New Order Placed - Order #" + event.getOrderId();
+        String content = "Customer " + customerEmail + " (ID: " + customerId + ") has placed a new order #"
+                + event.getOrderId() + ".";
+
+        Notification notification = createNotification(
+                NotificationType.IN_APP,
+                "admin@smartstock.com",
+                0L,
+                subject,
+                content);
+
+        try {
+            notification.setStatus(NotificationStatus.SENT);
+            notification.setSentAt(LocalDateTime.now());
+        } finally {
+            Notification savedNotification = notificationRepository.save(notification);
             broadcastToAdmins(savedNotification);
         }
     }
 
-    public void sendOrderStatusUpdate(OrderStatusChangedEvent event, String customerEmail) {
+    public void sendOrderStatusUpdate(OrderStatusChangedEvent event, String customerEmail, Long userId) {
         log.info("Sending order status update for order: {} (Status: {}) to: {}", event.getOrderId(),
                 event.getNewStatus(), customerEmail);
 
@@ -92,7 +117,7 @@ public class NotificationService {
         Notification notification = createNotification(
                 NotificationType.EMAIL,
                 customerEmail,
-                event.getCustomerId(),
+                userId,
                 subject,
                 content);
 
@@ -109,7 +134,7 @@ public class NotificationService {
             log.error("Failed to send order status email to: {}", customerEmail, e);
         } finally {
             Notification savedNotification = notificationRepository.save(notification);
-            broadcastToUser(event.getCustomerId(), savedNotification);
+            broadcastToUser(userId, savedNotification);
         }
     }
 
@@ -161,6 +186,14 @@ public class NotificationService {
     public Notification getNotificationById(Long id) {
         return notificationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Notification not found with id: " + id));
+    }
+
+    public long getUnreadCountByUserId(Long userId) {
+        return notificationRepository.countByRecipientUserIdAndStatusNot(userId, NotificationStatus.READ);
+    }
+
+    public long getGlobalUnreadCount() {
+        return notificationRepository.countByStatusNot(NotificationStatus.READ);
     }
 
     private String buildWelcomeEmailContent(UserRegisteredEvent event) {

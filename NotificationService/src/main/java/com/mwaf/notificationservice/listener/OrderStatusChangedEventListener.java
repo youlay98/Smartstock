@@ -22,19 +22,23 @@ public class OrderStatusChangedEventListener {
                 event.getNewStatus());
         try {
             String customerEmail = "customer@example.com";
+            Long userId = null;
             if (event.getCustomerId() != null) {
                 try {
                     com.mwaf.notificationservice.dto.CustomerDTO customer = customerServiceClient
-                            .getCustomerByUserId(event.getCustomerId());
-                    if (customer != null && customer.getEmail() != null) {
-                        customerEmail = customer.getEmail();
+                            .getCustomerById(event.getCustomerId());
+                    if (customer != null) {
+                        if (customer.getEmail() != null) {
+                            customerEmail = customer.getEmail();
+                        }
+                        userId = customer.getUserId();
                     }
                 } catch (Exception e) {
                     log.error("Failed to fetch customer email for customerId: {}", event.getCustomerId(), e);
                 }
             }
 
-            notificationService.sendOrderStatusUpdate(event, customerEmail);
+            notificationService.sendOrderStatusUpdate(event, customerEmail, userId);
         } catch (Exception e) {
             log.error("Error processing OrderStatusChangedEvent for order: {}", event.getOrderId(), e);
             throw new RuntimeException("Failed to process OrderStatusChangedEvent, routing to DLQ", e);

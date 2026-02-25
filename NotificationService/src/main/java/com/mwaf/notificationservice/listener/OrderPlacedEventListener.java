@@ -21,19 +21,24 @@ public class OrderPlacedEventListener {
         log.info("Received OrderPlacedEvent for order: {}", event.getOrderId());
         try {
             String customerEmail = "customer@example.com"; // Default fallback
+            Long userId = null;
             if (event.getCustomerId() != null) {
                 try {
                     com.mwaf.notificationservice.dto.CustomerDTO customer = customerServiceClient
-                            .getCustomerByUserId(event.getCustomerId());
-                    if (customer != null && customer.getEmail() != null) {
-                        customerEmail = customer.getEmail();
+                            .getCustomerById(event.getCustomerId());
+                    if (customer != null) {
+                        if (customer.getEmail() != null) {
+                            customerEmail = customer.getEmail();
+                        }
+                        userId = customer.getUserId();
                     }
                 } catch (Exception e) {
                     log.error("Failed to fetch customer email for customerId: {}", event.getCustomerId(), e);
                 }
             }
 
-            notificationService.sendOrderConfirmationEmail(event, customerEmail);
+            notificationService.sendOrderConfirmationEmail(event, customerEmail, userId);
+            notificationService.sendAdminOrderNotification(event, customerEmail, event.getCustomerId());
         } catch (Exception e) {
             log.error("Error processing OrderPlacedEvent for order: {}", event.getOrderId(), e);
             throw new RuntimeException("Failed to process OrderPlacedEvent, routing to DLQ", e);

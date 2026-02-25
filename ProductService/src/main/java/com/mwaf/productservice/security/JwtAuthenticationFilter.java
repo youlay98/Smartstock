@@ -55,13 +55,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .collect(Collectors.toList());
 
             // Create authentication token
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userId, null, authorities);
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null,
+                    authorities);
 
             // Set the authentication in the SecurityContext
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (Exception e) {
+            System.err.println("JWT Authentication failed in ProductService: " + e.getMessage());
+            e.printStackTrace();
             // If token validation fails, clear the security context
             SecurityContextHolder.clearContext();
         }

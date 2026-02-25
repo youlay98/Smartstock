@@ -320,7 +320,7 @@ const toggleDropdown = () => {
   if (!props.showDropdown) return
   
   isDropdownOpen.value = !isDropdownOpen.value
-  if (isDropdownOpen.value && authStore.user?.roles?.includes('ROLE_ADMIN')) {
+  if (isDropdownOpen.value && authStore.user) {
     loadNotifications()
   }
 }
@@ -431,8 +431,8 @@ const handleClickOutside = (event) => {
 
 // Lifecycle
 onMounted(async () => {
-  // Only load notifications for admin users
-  if (authStore.user?.roles?.includes('ROLE_ADMIN')) {
+  // Load notifications for all authenticated users
+  if (authStore.user) {
     await notificationStore.initialize()
     previousUnreadCount.value = unreadCount.value
   }

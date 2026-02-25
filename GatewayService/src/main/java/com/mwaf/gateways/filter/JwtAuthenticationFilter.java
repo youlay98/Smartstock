@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         // Check for Authorization header
         if (!request.getHeaders().containsKey("Authorization")) {
-            System.out.println("Rejecting request: No Auth header for path " + path);
+            System.out.println("Rejecting request: No Auth header for method " + method + " and path " + path);
             return onError(exchange, "No Authorization header", HttpStatus.UNAUTHORIZED);
         }
 
