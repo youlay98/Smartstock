@@ -172,7 +172,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { getAllProducts } from '@/services/productService'
+import { getAllProducts } from '@/services/productservice'
 import { useCartStore } from '@/stores/cart'
 import RatingStars from '@/ui/atoms/RatingStars.vue'
 import ProductRatingModal from '@/components/ProductRatingModal.vue'
@@ -719,17 +719,16 @@ onMounted(async () => {
   background: var(--color-primary);
   color: var(--color-white);
   border: none;
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: var(--font-size-base);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-sm);
-  width: 100%;
+  gap: var(--spacing-xs);
   box-shadow: var(--shadow-sm);
 }
 
