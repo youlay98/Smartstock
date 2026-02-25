@@ -214,7 +214,7 @@ export const setupResponseInterceptors = () => {
             headers: { 'Content-Type': 'application/json' }
           }).catch(e => console.error('Failed to report to interceptor', e))
           console.warn('403 Authorization error - user might not have required permissions')
-          toast.error('You do not have permission to perform this action.')
+          // toast.error('You do not have permission to perform this action.') // Disabled per user request
           shownToasts.add(errorKey)
           setTimeout(() => shownToasts.delete(errorKey), 5000)
         }
